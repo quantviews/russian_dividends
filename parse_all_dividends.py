@@ -16,16 +16,6 @@ def main():
     with open('metadata/ticker_mappings.json', 'r', encoding='utf-8') as f:
         ticker_mappings = json.load(f)
     
-    # Список тикеров для повторной обработки
-    failed_tickers = [
-        'VZRZ', 'BSPB', 'BISV', 'BANE', 'VGSB', 'GAZA', 'RLMN', 'POSI', 'DZRD', 'KZOS',
-        'KOGK', 'KTSB', 'KRSB', 'KAZT', 'KGKC', 'LNZL', 'MAGE', 'MTLR', 'MGTS', 'MRKS',
-        'NKNC', 'OMZZ', 'PMSB', 'CHGZ', 'AGRO', 'RGSS', 'RDRB', 'RSTI', 'LSNG', 'RTKM',
-        'RUAL', 'SAGO', 'KRKN', 'SARE', 'SBER', 'MFGS', 'JNOS', 'STSB', 'SNGS', 'TASB',
-        'TANL', 'TATN', 'VRSB', 'MISB', 'NNSB', 'RTSB', 'YRSB', 'TORS', 'TRNFP', 'HIMC',
-        'WTCM', 'CNTL', 'CHKZ', 'UKUZ', 'EVR', 'HHRU', 'NORD', 'POLY', 'QIWI', 'FIVE'
-    ]
-    
     # Создаем словарь для хранения результатов парсинга
     parsing_summary = {
         'success': [],
@@ -36,16 +26,7 @@ def main():
     }
     
     # Обрабатываем каждый тикер
-    for ticker in failed_tickers:
-        if ticker not in ticker_mappings:
-            print(f"Тикер {ticker} не найден в маппинге")
-            parsing_summary['failed'].append({
-                'ticker': ticker,
-                'error': 'Тикер не найден в маппинге'
-            })
-            parsing_summary['failed_count'] += 1
-            continue
-            
+    for ticker in ticker_mappings:
         print(f"\nОбработка тикера {ticker}...")
         try:
             # Получаем историю дивидендов
