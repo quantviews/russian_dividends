@@ -1,9 +1,5 @@
 {
-  "total_tickers": 175,
-  "success_count": 115,
-  "failed_count": 60,
-  "success_rate": "65.7%",
-  "failed_tickers": [
+  "success": [
     "VZRZ",
     "BSPB",
     "BISV",
@@ -59,10 +55,18 @@
     "CHKZ",
     "UKUZ",
     "EVR",
-    "HHRU",
     "NORD",
     "POLY",
     "QIWI",
     "FIVE"
-  ]
+  ],
+  "failed": [
+    {
+      "ticker": "HHRU",
+      "error": "Нет данных"
+    }
+  ],
+  "total_processed": 60,
+  "success_count": 59,
+  "failed_count": 1
 }

@@ -81,21 +81,27 @@ def get_dividend_history(ticker: str, save_csv: bool = True) -> pd.DataFrame:
         response = requests.get(url, headers=headers)
         response.raise_for_status()
         response.encoding = 'utf-8'
+        
         soup = BeautifulSoup(response.text, 'html.parser')
         
         # Поиск таблицы с дивидендами
         tables = soup.find_all('table')
         print(f"Найдено таблиц: {len(tables)}")
         
-        # Таблица с дивидендами должна быть первой с 2 колонками
+        # Поиск таблицы с дивидендами
         target_table = None
         for i, table in enumerate(tables):
             rows = table.find_all('tr')
-            if rows and len(rows[0].find_all(['td', 'th'])) == 2:
-                target_table = table
-                print(f"Найдена таблица с дивидендами (таблица #{i+1})")
+            if not rows:
+                continue
+                
+            # Проверяем все строки на наличие ключевых слов
+            table_text = ' '.join(row.text.strip().lower() for row in rows)
+            if any(keyword in table_text for keyword in ['период', 'дивиденд', 'выплат', 'акци']):
+                print(f"\nНайдена таблица с дивидендами (таблица #{i+1})")
                 print("\nHTML таблицы:")
                 print(table.prettify())
+                target_table = table
                 break
         
         if not target_table:
@@ -105,22 +111,16 @@ def get_dividend_history(ticker: str, save_csv: bool = True) -> pd.DataFrame:
         rows = []
         for tr in target_table.find_all('tr'):
             cells = tr.find_all(['td', 'th'])
-            if len(cells) == 2:
+            if len(cells) >= 2:  # Минимум 2 колонки (период и обыкновенные акции)
                 period = cells[0].text.strip()
-                dividend = cells[1].text.strip()
+                dividend = cells[1].text.strip()  # Дивиденд по обыкновенным акциям
+                
                 print(f"\nОбработка строки:")
-                print(f"HTML ячейки периода: {cells[0]}")
                 print(f"Период: {period}")
                 print(f"Дивиденд: {dividend}")
                 
-                if period != "Период выплаты":
-                    # Пропуск строк с "ИТОГО"
-                    if "ИТОГО" in period:
-                        print("Пропуск строки с ИТОГО")
-                        continue
-                        
+                if period != "Период выплаты" and not "ИТОГО" in period:
                     # Извлечение даты закрытия реестра и года
-                    # Заменяем переносы строк на пробелы для упрощения парсинга
                     period = period.replace('\n', ' ').strip()
                     
                     # Ищем дату в формате "закрытие реестра 9.07.2025" или "закрытие реестра 09.07.2025"
@@ -141,8 +141,7 @@ def get_dividend_history(ticker: str, save_csv: bool = True) -> pd.DataFrame:
                         else:
                             closing_date = None
                     
-                    # Ищем год выплаты (должен быть отдельным числом, не частью даты)
-                    # Исключаем год из даты закрытия реестра
+                    # Ищем год выплаты
                     if closing_date:
                         period = period.replace(closing_date.split('.')[-1], '')
                     
@@ -151,13 +150,16 @@ def get_dividend_history(ticker: str, save_csv: bool = True) -> pd.DataFrame:
                     
                     print(f"Найдены - дата: {closing_date}, год: {year}")
                     
-                    # Пропуск если нет года
                     if not year:
                         print("Пропуск строки - не найден год")
                         continue
                     
-                    # Тип периода - всегда полный год для X5
+                    # Определяем тип периода
                     period_type = 'full year'
+                    if 'i полугодие' in period.lower() or '1 полугодие' in period.lower():
+                        period_type = 'half year'
+                    elif '9 месяцев' in period.lower():
+                        period_type = '9 months'
                     
                     # Извлечение значения дивиденда
                     if "РЕШЕНИЕ ДИВИДЕНДЫ НЕ ВЫПЛАЧИВАТЬ" in dividend:
@@ -221,8 +223,11 @@ def get_dividend_history(ticker: str, save_csv: bool = True) -> pd.DataFrame:
         return pd.DataFrame()
 
 if __name__ == "__main__":
-    # Пример использования
-    ticker = "FIVE"  # X5 Group
+    import sys
+    
+    # Получаем тикер из аргументов командной строки или используем FIVE по умолчанию
+    ticker = sys.argv[1] if len(sys.argv) > 1 else "FIVE"
+    print(f"Парсинг дивидендной истории для тикера {ticker}")
     df = get_dividend_history(ticker)
     print(f"\nДивидендная история для {ticker}:")
     print(df.to_string()) 
