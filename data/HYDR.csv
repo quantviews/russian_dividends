@@ -12,3 +12,5 @@ closing_date,year,period_type,dividend_value
 2013-05-23,2012,full year,0.00955606
 2012-04-23,2011,full year,0.00789317
 2011-05-23,2010,full year,0.00860091
+,2009,full year,0.0
+,2008,full year,0.0

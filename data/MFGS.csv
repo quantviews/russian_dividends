@@ -1,4 +1,6 @@
 closing_date,year,period_type,dividend_value
+,2024,full year,0.0
+,2023,full year,0.0
 ,2022,full year,0.0
 ,2021,full year,0.0
 ,2020,full year,0.0
@@ -17,6 +19,7 @@ closing_date,year,period_type,dividend_value
 2008-05-01,2007,full year,0.0
 2007-05-04,2006,full year,0.0
 2006-05-05,2005,full year,0.0
+2005-08-15,2005,full year,202.5
 2005-05-06,2004,full year,0.0
 2004-05-07,2003,full year,0.0
 2003-05-05,2002,full year,0.0

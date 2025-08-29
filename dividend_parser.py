@@ -73,7 +73,6 @@ def get_dividend_history(ticker: str, save_csv: bool = True) -> pd.DataFrame:
             raise ValueError(f"Не найден URL для тикера {ticker}")
             
         url = f"{base_url}/{url_path}/"
-        print(f"Загрузка данных с {url}")
         
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
@@ -86,7 +85,6 @@ def get_dividend_history(ticker: str, save_csv: bool = True) -> pd.DataFrame:
         
         # Поиск таблицы с дивидендами
         tables = soup.find_all('table')
-        print(f"Найдено таблиц: {len(tables)}")
         
         # Поиск таблицы с дивидендами
         target_table = None
@@ -98,9 +96,6 @@ def get_dividend_history(ticker: str, save_csv: bool = True) -> pd.DataFrame:
             # Проверяем все строки на наличие ключевых слов
             table_text = ' '.join(row.text.strip().lower() for row in rows)
             if any(keyword in table_text for keyword in ['период', 'дивиденд', 'выплат', 'акци']):
-                print(f"\nНайдена таблица с дивидендами (таблица #{i+1})")
-                print("\nHTML таблицы:")
-                print(table.prettify())
                 target_table = table
                 break
         
@@ -109,15 +104,20 @@ def get_dividend_history(ticker: str, save_csv: bool = True) -> pd.DataFrame:
             
         # Извлечение данных
         rows = []
+        preferred_rows = []
+        has_preferred_shares = False
+        
         for tr in target_table.find_all('tr'):
             cells = tr.find_all(['td', 'th'])
+            
             if len(cells) >= 2:  # Минимум 2 колонки (период и обыкновенные акции)
                 period = cells[0].text.strip()
                 dividend = cells[1].text.strip()  # Дивиденд по обыкновенным акциям
                 
-                print(f"\nОбработка строки:")
-                print(f"Период: {period}")
-                print(f"Дивиденд: {dividend}")
+                # Проверяем наличие колонки с привилегированными акциями
+                if len(cells) >= 3:
+                    has_preferred_shares = True
+                    preferred_dividend = cells[2].text.strip()  # Дивиденд по привилегированным акциям
                 
                 if period != "Период выплаты" and not "ИТОГО" in period:
                     # Извлечение даты закрытия реестра и года
@@ -145,58 +145,87 @@ def get_dividend_history(ticker: str, save_csv: bool = True) -> pd.DataFrame:
                     if closing_date:
                         period = period.replace(closing_date.split('.')[-1], '')
                     
+                    # Исправленный regex для извлечения года - ищем 4-значное число в начале строки или после пробела
                     year_match = re.search(r'(?:^|\s)(\d{4})(?:\s|$)', period)
+                    if not year_match:
+                        # Альтернативный поиск - ищем 4-значное число в любом месте
+                        year_match = re.search(r'(\d{4})', period)
+                    
                     year = year_match.group(1) if year_match else None
                     
-                    print(f"Найдены - дата: {closing_date}, год: {year}")
+                    # Дополнительная проверка - если год не найден, попробуем найти его в исходном тексте
+                    if not year:
+                        # Ищем год в исходном тексте периода до замены даты
+                        original_period = cells[0].text.strip()
+                        year_match = re.search(r'(\d{4})', original_period)
+                        year = year_match.group(1) if year_match else None
                     
                     if not year:
-                        print("Пропуск строки - не найден год")
                         continue
                     
                     # Определяем тип периода
                     period_type = 'full year'
-                    if 'i полугодие' in period.lower() or '1 полугодие' in period.lower():
+                    if 'i полугодие' in period.lower() or '1 полугодие' in period.lower() or 'і полугодие' in period.lower():
                         period_type = 'half year'
-                    elif '9 месяцев' in period.lower():
+                    elif '9 месяцев' in period.lower() or '9 мес' in period.lower():
                         period_type = '9 months'
+                    elif '6 месяцев' in period.lower() or '6 мес' in period.lower():
+                        period_type = '6 months'
+                    elif '3 месяца' in period.lower() or '3 мес' in period.lower():
+                        period_type = '3 months'
                     
-                    # Извлечение значения дивиденда
+                    # Извлечение значения дивиденда по обыкновенным акциям
                     if "РЕШЕНИЕ ДИВИДЕНДЫ НЕ ВЫПЛАЧИВАТЬ" in dividend:
                         dividend_value = 0.0
-                        print("Дивиденды не выплачиваются")
                     else:
-                        dividend_match = re.search(r'(\d+(?:,\d+)?(?:\.\d+)?)\s*руб\.', dividend)
+                        # Исправленный regex для корректного извлечения чисел с разделителями тысяч (пробелы) и десятичными (запятые)
+                        dividend_match = re.search(r'(\d{1,3}(?:\s\d{3})*(?:,\d+)?)\s*руб\.', dividend)
                         if not dividend_match:
                             # Попытка найти значение без указания "руб."
-                            dividend_match = re.search(r'(\d+(?:,\d+)?(?:\.\d+)?)', dividend)
+                            dividend_match = re.search(r'(\d{1,3}(?:\s\d{3})*(?:,\d+)?)', dividend)
                         
                         dividend_value = dividend_match.group(1) if dividend_match else None
                         if dividend_value:
-                            dividend_value = dividend_value.replace(',', '.')
-                            print(f"Найдено значение дивиденда: {dividend_value}")
+                            # Убираем все пробелы (разделители тысяч) и заменяем запятую на точку для десятичных
+                            dividend_value = dividend_value.replace(' ', '').replace(',', '.')
                         else:
-                            print("Пропуск строки - не найдено значение дивиденда")
                             continue
                     
-                    parsed_date = parse_russian_date(closing_date) if closing_date else None
-                    if parsed_date:
-                        rows.append({
-                            'closing_date': parsed_date,
+                    # Добавляем строку в результат для обыкновенных акций
+                    row_data = {
+                        'closing_date': pd.to_datetime(closing_date, format='%d.%m.%Y') if closing_date else pd.NaT,
+                        'year': int(year),
+                        'period_type': period_type,
+                        'dividend_value': float(dividend_value)
+                    }
+                    rows.append(row_data)
+                    
+                    # Если есть привилегированные акции, обрабатываем их
+                    if has_preferred_shares and len(cells) >= 3:
+                        if "РЕШЕНИЕ ДИВИДЕНДЫ НЕ ВЫПЛАЧИВАТЬ" in preferred_dividend:
+                            preferred_dividend_value = 0.0
+                        else:
+                            # Извлечение значения дивиденда по привилегированным акциям
+                            preferred_dividend_match = re.search(r'(\d{1,3}(?:\s\d{3})*(?:,\d+)?)\s*руб\.', preferred_dividend)
+                            if not preferred_dividend_match:
+                                # Попытка найти значение без указания "руб."
+                                preferred_dividend_match = re.search(r'(\d{1,3}(?:\s\d{3})*(?:,\d+)?)', preferred_dividend)
+                            
+                            preferred_dividend_value = preferred_dividend_match.group(1) if preferred_dividend_match else None
+                            if preferred_dividend_value:
+                                # Убираем все пробелы (разделители тысяч) и заменяем запятую на точку для десятичных
+                                preferred_dividend_value = preferred_dividend_value.replace(' ', '').replace(',', '.')
+                            else:
+                                continue
+                        
+                        # Добавляем строку в результат для привилегированных акций
+                        preferred_row_data = {
+                            'closing_date': pd.to_datetime(closing_date, format='%d.%m.%Y') if closing_date else pd.NaT,
                             'year': int(year),
                             'period_type': period_type,
-                            'dividend_value': float(dividend_value)
-                        })
-                        print("Строка успешно добавлена")
-                    else:
-                        # Если нет даты закрытия реестра, но есть год и значение дивиденда
-                        rows.append({
-                            'closing_date': None,
-                            'year': int(year),
-                            'period_type': period_type,
-                            'dividend_value': float(dividend_value)
-                        })
-                        print("Строка успешно добавлена (без даты закрытия реестра)")
+                            'dividend_value': float(preferred_dividend_value)
+                        }
+                        preferred_rows.append(preferred_row_data)
         
         # Преобразование в DataFrame
         df = pd.DataFrame(rows)
@@ -204,17 +233,30 @@ def get_dividend_history(ticker: str, save_csv: bool = True) -> pd.DataFrame:
         # Сортировка по дате закрытия реестра
         if not df.empty:
             df = df.sort_values('year', ascending=False)
-            print("\nИтоговый DataFrame:")
-            print(df)
         else:
             print("\nDataFrame пустой - данные не найдены")
-        
+
         # Сохранение в CSV если запрошено
         if save_csv and not df.empty:
             os.makedirs('data', exist_ok=True)
             csv_path = os.path.join('data', f'{ticker.upper()}.csv')
             df.to_csv(csv_path, index=False)
-            print(f"Данные сохранены в {csv_path}")
+        else:
+            print(f"Для тикера {ticker} не найдено данных по обыкновенным акциям")
+
+        # Преобразование в DataFrame для привилегированных акций
+        df_preferred = pd.DataFrame(preferred_rows)
+
+        # Сортировка по дате закрытия реестра
+        if not df_preferred.empty:
+            df_preferred = df_preferred.sort_values('year', ascending=False)
+        else:
+            print("\nDataFrame пустой - данные привилегированных акций не найдены")
+
+        # Сохранение в CSV если запрошено
+        if save_csv and not df_preferred.empty:
+            csv_path = os.path.join('data', f'{ticker.upper()}P.csv')
+            df_preferred.to_csv(csv_path, index=False)
         
         return df
         
@@ -225,9 +267,20 @@ def get_dividend_history(ticker: str, save_csv: bool = True) -> pd.DataFrame:
 if __name__ == "__main__":
     import sys
     
-    # Получаем тикер из аргументов командной строки или используем FIVE по умолчанию
+    # Получаем тикер из аргументов командной строки или используем значение по умолчанию
     ticker = sys.argv[1] if len(sys.argv) > 1 else "FIVE"
+    
     print(f"Парсинг дивидендной истории для тикера {ticker}")
-    df = get_dividend_history(ticker)
-    print(f"\nДивидендная история для {ticker}:")
-    print(df.to_string()) 
+    
+    try:
+        # Получаем историю дивидендов
+        df_ordinary = get_dividend_history(ticker)
+        
+        if not df_ordinary.empty:
+            print(f"\nДивидендная история для {ticker} (обыкновенные акции):")
+            print(df_ordinary.to_string())
+        else:
+            print(f"Для тикера {ticker} не найдено данных по обыкновенным акциям")
+            
+    except Exception as e:
+        print(f"Ошибка при обработке тикера {ticker}: {str(e)}") 

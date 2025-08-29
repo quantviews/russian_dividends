@@ -5,12 +5,17 @@ closing_date,year,period_type,dividend_value
 2020-07-16,2019,full year,0.13
 2019-07-18,2018,full year,0.11
 2018-07-19,2017,full year,0.11
+2017-12-08,2017,9 months,0.68
+2017-07-13,2017,full year,0.81
+2016-10-07,2016,full year,0.38
+2016-07-14,2015,full year,0.67
 2015-07-16,2014,full year,0.47
 2014-07-17,2013,full year,2.06
 2013-05-20,2012,full year,0.96
 2012-05-21,2011,full year,0.28
 2011-05-18,2010,full year,0.26
 2010-05-14,2009,full year,0.055
+,2008,full year,0.0
 2008-05-17,2007,full year,0.25
 2007-05-12,2006,full year,0.048
 2006-05-15,2005,full year,0.028

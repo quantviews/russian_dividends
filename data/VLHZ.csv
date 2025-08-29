@@ -1,9 +1,11 @@
 closing_date,year,period_type,dividend_value
+,2018,full year,0.0
 2018-05-30,2017,full year,4.9
 2017-06-08,2016,full year,9.0
 2016-06-08,2015,full year,10.0
+,2014,full year,0.0
 2014-06-09,2013,full year,3.8
-2013-08-08,2013,full year,9.5
+2013-08-08,2013,half year,9.5
 2013-04-02,2012,full year,4.25
 2012-05-04,2012,full year,6.35
 2012-02-17,2011,full year,4.7

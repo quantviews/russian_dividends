@@ -1,5 +1,8 @@
 closing_date,year,period_type,dividend_value
-2022-10-11,2022,full year,51.03
+2022-10-11,2022,half year,51.03
+2021-07-15,2021,full year,12.55
+2020-07-16,2019,full year,15.24
+2019-07-18,2018,full year,16.61
 2018-07-19,2017,full year,8.04
 2017-07-20,2016,full year,8.0397
 2016-07-20,2015,full year,7.89
@@ -19,6 +22,7 @@ closing_date,year,period_type,dividend_value
 2002-05-13,2001,full year,0.44
 2001-05-04,2000,full year,0.3
 2000-05-05,1999,full year,0.1
+,1998,full year,0.0
 1998-04-28,1997,full year,0.03
 1997-04-29,1996,full year,0.02
 1996-05-05,1995,full year,0.02

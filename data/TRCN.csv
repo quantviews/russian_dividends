@@ -1,9 +1,14 @@
 closing_date,year,period_type,dividend_value
 2020-12-25,2020,9 months,782.63
-2019-10-03,2019,full year,154.57
+2020-12-25,2020,full year,2083.43
+,2019,full year,0.0
+2019-10-03,2019,half year,154.57
 2019-06-01,2018,full year,480.37
 2018-05-28,2017,full year,293.04
 2017-07-11,2016,full year,46.81
+2016-09-20,2016,half year,95.76
+2016-09-20,2016,full year,251.84
+,2015,full year,0.0
 2015-07-10,2014,full year,70.96
 2014-07-10,2013,full year,81.47
 2013-05-14,2012,full year,86.67

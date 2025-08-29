@@ -1,4 +1,5 @@
 closing_date,year,period_type,dividend_value
+2025-07-14,2024,full year,0.9573
 2024-07-10,2023,full year,0.772
 2023-07-12,2022,full year,0.798
 2022-07-12,2021,full year,0.54
@@ -7,9 +8,11 @@ closing_date,year,period_type,dividend_value
 2019-06-25,2018,full year,0.5
 2019-01-09,2018,9 months,0.2648
 2018-10-08,2018,full year,0.519216
+,2017,full year,0.0
 2017-05-29,2016,full year,0.7788237
 2016-09-14,2016,full year,0.467
 2016-07-05,2016,full year,0.0519216
+,2015,full year,0.0
 2015-07-13,2014,full year,0.2336
 2014-07-09,2013,full year,0.023364
 2013-04-28,2012,full year,0.02362

@@ -1,8 +1,24 @@
 closing_date,year,period_type,dividend_value
 2024-06-04,2023,full year,0.027378645
+,2022,full year,0.0
+,2021,full year,0.0
+,2020,full year,0.0
+,2019,full year,0.0
+,2018,full year,0.0
+,2017,full year,0.0
+,2016,full year,0.0
+,2015,full year,0.0
+,2014,full year,0.0
+,2013,full year,0.0
 2013-04-15,2012,full year,0.001839
+2011-10-14,2011,full year,0.0025
 2011-05-16,2010,full year,0.002393
+2010-10-30,2010,full year,0.00916
+,2009,full year,0.0
+,2008,full year,0.0
+,2007,full year,0.0
 2007-05-12,2006,full year,0.0051514822
+,2005,full year,0.0
 2005-05-13,2004,full year,0.0033
 2004-05-14,2003,full year,0.002027
 2003-05-05,2002,full year,0.0065

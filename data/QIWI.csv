@@ -1,6 +1,20 @@
 closing_date,year,period_type,dividend_value
+2021-12-06,2021,full year,0.3
+2021-09-07,2021,full year,0.3
+2021-06-22,2021,full year,0.22
 2021-04-27,2020,full year,0.31
+2020-12-01,2020,full year,0.34
+2020-09-22,2020,full year,0.33
+2020-06-02,2020,full year,0.14
 2020-04-06,2019,full year,0.22
+2019-12-02,2019,full year,0.28
+2019-08-30,2019,full year,0.28
+2019-05-28,2019,full year,0.28
+2017-08-29,2017,full year,0.21
 2017-04-03,2016,full year,0.19
+2016-12-05,2016,full year,0.22
+2016-08-29,2016,full year,0.22
+2016-05-26,2016,full year,0.22
 2016-03-29,2015,full year,0.5
+2015-05-26,2015,full year,0.25
 2014-06-13,2013,full year,0.32
