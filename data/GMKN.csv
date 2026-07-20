@@ -1,4 +1,4 @@
-closing_date,year,period_type,dividend_value_post_split
+closing_date,year,period_type,dividend_value
 2023-12-26,2023,9 months,9.1533
 2022-06-14,2021,full year,11.6622
 2022-01-14,2021,9 months,15.2317
@@ -24,7 +24,6 @@ closing_date,year,period_type,dividend_value_post_split
 2012-05-24,2011,full year,1.96
 2011-05-16,2010,full year,1.8
 2010-05-21,2009,full year,2.1
-,2008,full year,0.0
 2008-05-26,2007,full year,1.12
 2007-11-13,2007,9 months,1.08
 2007-05-15,2006,full year,1.2
@@ -36,3 +35,4 @@ closing_date,year,period_type,dividend_value_post_split
 2003-11-15,2003,9 months,0.421
 2003-05-14,2002,full year,0.217
 2002-05-16,2001,full year,0.23
+,2008,full year,0.0

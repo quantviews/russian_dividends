@@ -1,6 +1,5 @@
 closing_date,year,period_type,dividend_value
 2019-07-08,2018,full year,10395.0
-,2017,full year,0.0
 2017-12-21,2017,9 months,11875.0
 2017-06-16,2016,full year,5008.75
 2016-12-23,2016,9 months,17500.0
@@ -22,3 +21,4 @@ closing_date,year,period_type,dividend_value
 2008-11-21,2008,9 months,2125.0
 2008-04-24,2007,full year,375.0
 2007-11-02,2007,9 months,3125.0
+,2017,full year,0.0

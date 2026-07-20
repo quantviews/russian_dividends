@@ -1,4 +1,6 @@
 closing_date,year,period_type,dividend_value
+2013-05-20,2012,full year,0.00046354585
+2012-05-08,2011,full year,0.0643553972
 ,2020,full year,0.0
 ,2019,full year,0.0
 ,2018,full year,0.0
@@ -7,5 +9,3 @@ closing_date,year,period_type,dividend_value
 ,2015,full year,0.0
 ,2014,full year,0.0
 ,2013,full year,0.0
-2013-05-20,2012,full year,0.00046354585
-2012-05-08,2011,full year,0.0643553972

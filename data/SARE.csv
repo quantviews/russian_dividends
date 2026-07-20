@@ -1,4 +1,6 @@
 closing_date,year,period_type,dividend_value
+2011-05-23,2010,full year,0.0
+2008-03-11,2007,full year,0.0004349
 ,2019,full year,0.0
 ,2018,full year,0.0
 ,2017,full year,0.0
@@ -8,7 +10,5 @@ closing_date,year,period_type,dividend_value
 ,2013,full year,0.0
 ,2012,full year,0.0
 ,2011,full year,0.0
-2011-05-23,2010,full year,0.0
 ,2009,full year,0.0
 ,2008,full year,0.0
-2008-03-11,2007,full year,0.0004349
