@@ -1,0 +1,65 @@
+{
+  "reviewed_at": "2026-07-20",
+  "actionable_splits_found": [
+    {
+      "ticker": "IRAO",
+      "kind": "reverse",
+      "ratio": 100,
+      "date": "2014-12-26",
+      "status": "added_to_splits.json",
+      "evidence": "MOEX halt 2014-12-25; conversion 100 old → 1 new (nom. 0.028→2.81)"
+    }
+  ],
+  "false_positives": [
+    {
+      "ticker": "BANEP",
+      "verdict": "charter_minimum",
+      "detail": "0.10 RUB = 10% of 1 RUB par (ustav min for prefs). Paid in lean years 2016 and 2020 instead of full dividend. Confirmed by Bashneft IR and dohod.ru."
+    },
+    {
+      "ticker": "LNZLP",
+      "verdict": "special_dividend",
+      "detail": "3699.27 RUB for 2020 = one-off distribution after sale of ZDK Lenzoloto to Polyus (~19.9 bn). Not a split; price gapped ~60% on ex-date."
+    },
+    {
+      "ticker": "CNTL",
+      "verdict": "special_dividend",
+      "detail": "7.41 (2018) and 11.83 (2019) from real-estate sales (Nikitsky / Tverskaya), ~5.5 bn proceeds. Yields 30-40%+; no share consolidation."
+    },
+    {
+      "ticker": "CNTLP",
+      "verdict": "special_dividend",
+      "detail": "Same as CNTL (equal AO/AP payouts on those years)."
+    },
+    {
+      "ticker": "MTLRP",
+      "verdict": "policy_min_payout",
+      "detail": "0.05 RUB in 2012-2015 crisis years is the actual declared amount (Mechel IR table). Prefs normally = 20% IFRS NI / 138756915; when NI weak they paid nominal 0.05. Not a split."
+    },
+    {
+      "ticker": "LPSB",
+      "verdict": "resume_after_gap",
+      "detail": "16 RUB Q1'2024 special after ~10y of zeros/0.10; no split/consolidation found. Later 2025 = 0.55."
+    },
+    {
+      "ticker": "TRCN",
+      "verdict": "earnings_collapse",
+      "detail": "Official TransContainer table: 19.29 (FY2008) → 0.16 (FY2009 crisis) → 2.91 (FY2010). Same share count; payout stayed ~10% of NI."
+    },
+    {
+      "ticker": "MFGSP",
+      "verdict": "special_dividend",
+      "detail": "202.5 RUB interim H1'2005 — dumping ~26 bn accumulated cash (Vedomosti 2005-08-15). Real one-off."
+    },
+    {
+      "ticker": "TASBP",
+      "verdict": "illiquid_history",
+      "detail": "Only 2 non-zero pref rows (2011-2012); no corporate action found. Tiny float/illiquid series — ignore for split detection."
+    }
+  ],
+  "notes": [
+    "Jump detector correctly flagged IRAO reverse split among noise.",
+    "Pref min-dividend tickers (BANEP, MTLRP) will keep firing unless detector excludes known charter floors.",
+    "Special/asset-sale dividends (LNZLP, CNTL, MFGSP) are real economics, not data errors."
+  ]
+}

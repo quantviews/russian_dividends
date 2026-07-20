@@ -1,0 +1,20 @@
+{
+  "GMKN": [
+    {"date": "2024-04-04", "ratio": 100, "kind": "split", "note": "1:100"}
+  ],
+  "TRNFP": [
+    {"date": "2024-02-20", "ratio": 100, "kind": "split", "note": "1:100"}
+  ],
+  "TRNFPP": [
+    {"date": "2024-02-20", "ratio": 100, "kind": "split", "note": "same as TRNFP"}
+  ],
+  "PLZL": [
+    {"date": "2025-03-27", "ratio": 10, "kind": "split", "note": "1:10"}
+  ],
+  "VTBR": [
+    {"date": "2024-07-11", "ratio": 5000, "kind": "reverse", "note": "5000:1 consolidation"}
+  ],
+  "IRAO": [
+    {"date": "2014-12-26", "ratio": 100, "kind": "reverse", "note": "100:1 consolidation"}
+  ]
+}
