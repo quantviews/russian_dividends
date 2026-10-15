@@ -9,6 +9,34 @@ from dividend_events.storage import EvidenceStore, read_json
 from dividend_events.model import merge_revisions
 
 
+def test_document_progress_distinguishes_cached_failed_and_unselected(tmp_path, monkeypatch):
+    from dividend_events.archive import collect_documents
+    from dividend_events.storage import write_json
+    messages = [dict(provider="prime", agency="5", message_id=str(i), url=f"https://example.org/{i}",
+                     title="Решения совета директоров" if i < 3 else "Иная информация") for i in range(4)]
+    write_json(tmp_path / "issuers/1.json", dict(inn="1", messages=messages))
+    write_json(tmp_path / "messages/5-0.json", dict(source_id="existing"))
+    write_json(tmp_path / "messages/5-1.json", dict(review=dict(status="source_unavailable", reason="host circuit open")))
+    store = EvidenceStore(tmp_path / "evidence")
+    calls = []
+
+    def fetch(url, kind):
+        calls.append(url)
+        if url.endswith("2"):
+            raise TimeoutError("Attempted request timed out")
+        return b"body", {"source_id": "new"}
+
+    monkeypatch.setattr(store, "fetch", fetch)
+    monkeypatch.setattr(prime, "parse", lambda *args: ([], {"status": "not_dividend"}))
+    collect_documents(store, tmp_path, {"1": []}, {}, workers=1)
+    report = read_json(tmp_path / "document-progress.json")
+    assert report["complete"] and report["selected_documents"] == 3
+    assert report["scanned_documents"] == 4
+    assert report["counts"] == dict(cached=1, downloaded=1, unavailable=1, out_of_scope=1)
+    assert calls == [messages[1]["url"], messages[2]["url"]]
+    assert read_json(tmp_path / "messages/5-1.json")["source_id"] == "new"
+
+
 def security(kind="ordinary"):
     return dict(security_id="security:"+kind,issuer_id="issuer:test",ticker=kind,
                 share_class=kind,instrument_type="common_share" if kind=="ordinary" else "preferred_share")

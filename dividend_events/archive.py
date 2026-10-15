@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import re
+import time
 
 from .disclosure import categories, issuer_registry, load_policy, search_form, search_page, parse_message, SEARCH_URL
 from .storage import EvidenceStore, canonical, digest, now, read_json, write_json
@@ -318,16 +319,28 @@ def collect_documents(store, directory, groups, policy, workers=2):
     # Round robin avoids allowing one large bank's coupon disclosures to starve other issuers.
     pending = [(issuer, message) for position in range(max((len(i["messages"]) for i in issuers), default=0))
                for issuer in issuers for message in issuer["messages"][position:position+1]]
+    selected_total = sum(selected_message(message) for _, message in pending)
+    counts = Counter()
+    started_at = now()
+    last_progress = 0.0
+
+    def progress(index, complete=False):
+        write_json(directory / "document-progress.json", dict(
+            started_at=started_at, updated_at=now(), complete=complete,
+            indexed_documents=len(pending), selected_documents=selected_total,
+            scanned_documents=index, counts=dict(counts)))
+
+    progress(0)
     def collect_one(item):
         issuer, message = item
         target = directory / "messages" / (message["agency"] + "-" + message["message_id"] + ".json")
         if target.exists() and read_json(target).get("source_id"):
-            return None
+            return "cached", None
         result = dict(inn=issuer["inn"], message=message, checked_at=now())
         if not selected_message(message):
             result.update(events=[], review=dict(status="out_of_scope_title", reason="nonstandard_category_content_not_inspected"))
             write_json(target, result)
-            return None
+            return "out_of_scope", None
         try:
             body, source = store.fetch(message["url"], "disclosure_message")
             result["source_id"] = source["source_id"]
@@ -340,11 +353,16 @@ def collect_documents(store, directory, groups, policy, workers=2):
         except Exception as exc:
             result.update(events=[], review=dict(status="needs_review" if result.get("source_id") else "source_unavailable", reason=str(exc)))
         write_json(target, result)
-        return result
+        return "downloaded" if result.get("source_id") else "unavailable", result
     with ThreadPoolExecutor(max_workers=workers) as pool:
-        for index, result in enumerate(pool.map(collect_one, pending), 1):
+        for index, (state, result) in enumerate(pool.map(collect_one, pending), 1):
+            counts[state] += 1
+            if time.monotonic() - last_progress >= 30:
+                progress(index)
+                last_progress = time.monotonic()
             if result and (index % 20 == 0 or result.get("events")):
                 print(f"document {index}/{len(pending)}: {result['review']['status']}, {len(result['events'])} events", flush=True)
+    progress(len(pending), complete=True)
 
 
 def main():
