@@ -2,7 +2,44 @@
 from pathlib import Path
 
 from .archive import selected_message
-from .storage import read_json
+from .storage import read_json, write_json, digest, canonical, now
+
+
+def retry_timeouts(directory, store):
+    """One bounded retry pass, under the caller's exclusive provider lock."""
+    directory = Path(directory)
+    discovery = read_json(directory / "discovery.json")
+    counts = dict(selected=0, recovered=0, unavailable=0)
+    for path in sorted((directory / "messages").glob("*.json")):
+        previous = read_json(path)
+        review = previous.get("review", {})
+        if (previous.get("source_id") or review.get("status") != "source_unavailable"
+                or "timed out" not in review.get("reason", "").lower()):
+            continue
+        counts["selected"] += 1
+        # Preserve the original failed attempt even if recovery succeeds.
+        backup = directory / "retry-history" / (digest(canonical(previous)) + ".json")
+        if not backup.exists():
+            write_json(backup, previous)
+        message = previous["message"]
+        result = dict(inn=previous["inn"], message=message, checked_at=now())
+        try:
+            body, source = store.fetch(message["url"], "disclosure_message")
+            result["source_id"] = source["source_id"]
+            if message.get("provider") == "prime":
+                from .prime import parse
+            else:
+                from .disclosure import parse_message as parse
+            events, review = parse(body, source, message,
+                discovery["groups"][previous["inn"]], discovery["policy"], previous["inn"])
+            result.update(events=events, review=review)
+        except Exception as exc:
+            result.update(events=[], review=dict(
+                status="needs_review" if result.get("source_id") else "source_unavailable", reason=str(exc)))
+        counts["recovered" if result.get("source_id") else "unavailable"] += 1
+        write_json(path, result)
+    write_json(directory / "timeout-retry-summary.json", dict(checked_at=now(), **counts))
+    return counts
 
 
 def audit_collection(directory):

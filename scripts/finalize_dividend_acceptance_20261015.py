@@ -1,4 +1,4 @@
-"""One-shot continuation of the authorized archive run; no scheduler or network."""
+"""Finish the archive campaign, retry timeouts once, then run offline acceptance."""
 import json
 import msvcrt
 import os
@@ -70,8 +70,14 @@ def main():
 
     code_before = {p.name:digest(p.read_bytes()) for p in (PROJECT/'dividend_events').glob('*.py')}
     runs = [ROOT/'archive-runs'/name for name in ('skrin-20261015', 'prime-20261015')]
-    from dividend_events.acceptance import audit_collection
+    from dividend_events.acceptance import audit_collection, retry_timeouts
     collection = {directory.name: audit_collection(directory) for directory in runs}
+    status('retrying_timeouts', collection=collection, acceptance_complete=False)
+    from dividend_events.storage import EvidenceStore
+    retry_store = EvidenceStore(ROOT/'evidence', delay=2, timeout=60, retries=1)
+    retries = {directory.name: retry_timeouts(directory, retry_store) for directory in runs}
+    collection = {directory.name: audit_collection(directory) for directory in runs}
+    write_json(ROOT/'timeout-retry-summary.json', retries)
 
     status('testing', collection=collection, acceptance_complete=False)
     test_root = PROJECT/'artifacts'/('pytest-acceptance-'+str(time.time_ns()))

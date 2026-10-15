@@ -40,3 +40,36 @@ def test_gate_rejects_wrong_checkpoint_identity(tmp_path):
         audit_collection(tmp_path)
     write_json(tmp_path / "messages/5-one.json", dict(row, source_id="source:one"))
     assert audit_collection(tmp_path)["downloaded_documents"] == 1
+
+
+@pytest.mark.parametrize("recover", [True, False])
+def test_timeout_retry_preserves_failure_and_does_not_retry_access_denials(tmp_path, monkeypatch, recover):
+    from dividend_events import prime
+    from dividend_events.acceptance import retry_timeouts
+    from dividend_events.storage import read_json
+    row = campaign(tmp_path)
+    row["message"]["url"] = "https://example.org/one"
+    row["review"] = dict(status="source_unavailable", reason="Read timed out. (read timeout=20)")
+    write_json(tmp_path / "discovery.json", dict(groups={"123": []}, policy={}))
+    write_json(tmp_path / "messages/5-one.json", row)
+    denied = dict(row, review=dict(status="source_unavailable", reason="HTTP 403"))
+    write_json(tmp_path / "messages/5-denied.json", denied)
+    calls = []
+
+    class Store:
+        def fetch(self, url, kind):
+            calls.append(url)
+            if not recover:
+                raise TimeoutError("Read timed out again")
+            return b"body", {"source_id": "source:recovered"}
+
+    monkeypatch.setattr(prime, "parse", lambda *args: ([], {"status": "not_dividend"}))
+    result = retry_timeouts(tmp_path, Store())
+    assert result == dict(selected=1, recovered=int(recover), unavailable=int(not recover))
+    assert len(calls) == 1
+    assert read_json(next((tmp_path / "retry-history").glob("*.json"))) == row
+    assert read_json(tmp_path / "messages/5-denied.json") == denied
+    current = read_json(tmp_path / "messages/5-one.json")
+    assert bool(current.get("source_id")) == recover
+    if recover:
+        assert retry_timeouts(tmp_path, Store())["selected"] == 0
