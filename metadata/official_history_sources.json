@@ -1,0 +1,22 @@
+[
+  {
+    "ticker": "SBER",
+    "url": "https://www.e-disclosure.ru/portal/company.aspx?id=3043",
+    "role": "official_disclosure_archive"
+  },
+  {
+    "ticker": "GAZP",
+    "url": "https://www.gazprom.ru/press/news/2024/june/article574627/",
+    "role": "official_decision_publication"
+  },
+  {
+    "ticker": "LKOH",
+    "url": "https://lukoil.ru/InvestorAndShareholderCenter/Securities/Dividends",
+    "adapter": "lukoil_history_v1"
+  },
+  {
+    "ticker": "GMKN",
+    "url": "https://nornickel.ru/investors/shareholders/dividends/",
+    "adapter": "nornickel_history_v1"
+  }
+]

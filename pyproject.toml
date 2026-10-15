@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "issuer-events"
+version = "1.0.0"
+description = "Immutable issuer disclosures and dividend/bond event projections"
+requires-python = ">=3.11"
+dependencies = ["polars>=1.0", "requests>=2.31", "beautifulsoup4>=4.12", "tzdata"]
+
+[tool.setuptools]
+packages = ["issuer_events", "issuer_messages", "dividend_events"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

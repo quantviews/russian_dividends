@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0.0",
+  "package_id": "issuer-events-2a25e318647081738bbd42f2",
+  "package_path": "F:/Yandex.Disk/FINANCE/dividends/artifacts/dividend-events/issuer-packages/issuer-events-2a25e318647081738bbd42f2",
+  "manifest_sha256": "4602698539257925441553f6dc542ecf480826190969869e47ef52de91c4fd62",
+  "documents": 6881,
+  "bond_event_facts": 2025,
+  "nonperformance": 57,
+  "execution": 1833,
+  "terms_change": 135,
+  "linked_executions": 3,
+  "history_complete": false,
+  "full_bond_universe_covered": false,
+  "integration_ready": true,
+  "audit": "artifacts/dividend-events/issuer-audits/issuer-events-2a25e318647081738bbd42f2.json",
+  "contract": "docs/issuer-events.md",
+  "consumer": "moex-analytics credit.disclosure_package",
+  "consumer_mode": "observed_as_of"
+}
