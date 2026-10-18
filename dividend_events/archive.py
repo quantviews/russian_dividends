@@ -334,8 +334,13 @@ def collect_documents(store, directory, groups, policy, workers=2):
     def collect_one(item):
         issuer, message = item
         target = directory / "messages" / (message["agency"] + "-" + message["message_id"] + ".json")
-        if target.exists() and read_json(target).get("source_id"):
-            return "cached", None
+        if target.exists():
+            previous = read_json(target)
+            if previous.get("source_id"):
+                return "cached", None
+            if (not selected_message(message)
+                    and previous.get("review", {}).get("status") == "out_of_scope_title"):
+                return "out_of_scope", None
         result = dict(inn=issuer["inn"], message=message, checked_at=now())
         if not selected_message(message):
             result.update(events=[], review=dict(status="out_of_scope_title", reason="nonstandard_category_content_not_inspected"))
