@@ -283,7 +283,13 @@ def parse_message(body, source, message, securities, policy, expected_inn, *, re
             continue
         candidate = group[0]
         matches = [s for s in securities if s["share_class"] == share_class]
-        explicit = [s for s in matches if s.get("isin") and s["isin"] in text or s.get("regnumber") and s["regnumber"] in text]
+        # Registration numbers may use visually identical Cyrillic letters. Match
+        # whole tokens: the main issue must not match an additional issue suffix.
+        registration_text = text.upper().translate(str.maketrans("АВЕКМНОРСТХ", "ABEKMHOPCTX"))
+        registrations = [s for s in matches if s.get("regnumber") and re.search(
+            r"(?<![A-ZА-Я0-9-])" + re.escape(s["regnumber"].upper().translate(
+                str.maketrans("АВЕКМНОРСТХ", "ABEKMHOPCTX"))) + r"(?![A-ZА-Я0-9-])", registration_text)]
+        explicit = registrations or [s for s in matches if s.get("isin") and s["isin"] in text]
         if explicit:
             matches = explicit
         if len(matches) != 1:

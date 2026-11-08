@@ -11,6 +11,7 @@ dependencies = ["polars>=1.0", "requests>=2.31", "beautifulsoup4>=4.12", "tzdata
 
 [tool.setuptools]
 packages = ["issuer_events", "issuer_messages", "dividend_events"]
+py-modules = ["official_dividends"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -68,8 +68,13 @@ def audit(package, baseline, output):
         if len(value)>2 and value[0]=='/' and value[2]==':':value=value[1:]
         path=Path(value)
         same=path.is_file() and digest(path.read_bytes())==s["sha256"]
-        compatibility.append(dict(path=str(path),sha256=s["sha256"],unchanged=same))
-    if not compatibility or not all(r["unchanged"] for r in compatibility):
+        official_extension = False
+        if not same and path.is_file() and path.parent.name == "data":
+            from official_dividends import verified_csv_extension
+            official_extension = verified_csv_extension((baseline/s["raw_path"]).read_bytes(), path.read_bytes(), path.stem)
+        compatibility.append(dict(path=str(path),sha256=s["sha256"],unchanged=same,
+            official_extension_verified=official_extension))
+    if not compatibility or not all(r["unchanged"] or r["official_extension_verified"] for r in compatibility):
         raise ValueError("Legacy CSV differs from pinned baseline")
     summary=read_json(package/'summary.json')
     snapshot_at = read_json(package/'manifest.json')['snapshot_at']

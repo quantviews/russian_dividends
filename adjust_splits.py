@@ -15,7 +15,9 @@ import json
 import os
 from typing import Dict, List, Optional, Tuple
 
-import pandas as pd
+import polars as pl
+from datetime import date
+from official_dividends import merge_official, SUPPLEMENTS_PATH
 
 RAW_DIR = "data/raw"
 OUT_DIR = "data"
@@ -31,7 +33,7 @@ def load_splits(path: str = SPLITS_PATH) -> Dict[str, List[dict]]:
         return json.load(f)
 
 
-def adjustment_factor(splits: List[dict], as_of: Optional[pd.Timestamp]) -> float:
+def adjustment_factor(splits: List[dict], as_of: Optional[date]) -> float:
     """
     Multiplier to convert a historical (as-declared) dividend onto the
     current share basis.
@@ -41,9 +43,9 @@ def adjustment_factor(splits: List[dict], as_of: Optional[pd.Timestamp]) -> floa
     """
     factor = 1.0
     for split in splits:
-        split_date = pd.Timestamp(split["date"])
+        split_date = date.fromisoformat(split["date"])
         # Missing date → treat as pre-event (historical placeholder rows)
-        if as_of is None or pd.isna(as_of) or as_of < split_date:
+        if as_of is None or as_of < split_date:
             r = float(split["ratio"])
             kind = split.get("kind", "split")
             if kind == "reverse":
@@ -53,59 +55,42 @@ def adjustment_factor(splits: List[dict], as_of: Optional[pd.Timestamp]) -> floa
     return factor
 
 
-def normalize_value_column(df: pd.DataFrame) -> pd.DataFrame:
-    df = df.copy()
+def normalize_value_column(df: pl.DataFrame) -> pl.DataFrame:
     if "dividend_value_post_split" in df.columns and "dividend_value" not in df.columns:
-        df = df.rename(columns={"dividend_value_post_split": "dividend_value"})
-    elif "dividend_value_post_split" in df.columns:
-        df = df.drop(columns=["dividend_value_post_split"])
+        return df.rename({"dividend_value_post_split": "dividend_value"})
+    if "dividend_value_post_split" in df.columns:
+        return df.drop("dividend_value_post_split")
     return df
 
 
-def adjust_dataframe(df: pd.DataFrame, splits: List[dict]) -> pd.DataFrame:
+def adjust_dataframe(df: pl.DataFrame, splits: List[dict]) -> pl.DataFrame:
     df = normalize_value_column(df)
-    if df.empty or not splits:
+    if df.is_empty() or not splits:
         return df
+    dates = pl.col("closing_date").cast(pl.String).str.to_date(strict=False)
+    factor = pl.lit(1.0)
+    for split in splits:
+        ratio = float(split["ratio"])
+        multiplier = ratio if split.get("kind", "split") == "reverse" else 1 / ratio
+        factor = factor * pl.when(dates.is_null() | (dates < date.fromisoformat(split["date"]))).then(multiplier).otherwise(1.0)
+    return df.with_columns((pl.col("dividend_value").cast(pl.Float64) * factor).round(6))
 
-    df["closing_date"] = pd.to_datetime(df["closing_date"], errors="coerce")
-    factors = df["closing_date"].apply(lambda d: adjustment_factor(splits, d))
-    df["dividend_value"] = (df["dividend_value"].astype(float) * factors).round(6)
-    return df
 
-
-def detect_jumps(df: pd.DataFrame, ticker: str, threshold: float = JUMP_THRESHOLD) -> List[dict]:
-    """Flag consecutive non-zero dividends whose ratio exceeds threshold."""
-    if df.empty or "dividend_value" not in df.columns:
+def detect_jumps(df: pl.DataFrame, ticker: str, threshold: float = JUMP_THRESHOLD) -> List[dict]:
+    if df.is_empty() or "dividend_value" not in df.columns:
         return []
-
-    work = df.copy()
-    work["closing_date"] = pd.to_datetime(work["closing_date"], errors="coerce")
-    work = work.sort_values(["closing_date", "year"], ascending=False, na_position="last")
-    work = work[work["dividend_value"].astype(float) > 0].reset_index(drop=True)
-
+    rows = (df.with_columns(pl.col("closing_date").cast(pl.String).str.to_date(strict=False))
+            .filter(pl.col("dividend_value").cast(pl.Float64) > 0)
+            .sort(["closing_date", "year"], descending=True, nulls_last=True).to_dicts())
     anomalies = []
-    for i in range(len(work) - 1):
-        a = float(work.loc[i, "dividend_value"])
-        b = float(work.loc[i + 1, "dividend_value"])
-        if b <= 0:
-            continue
+    for newer, older in zip(rows, rows[1:]):
+        a, b = float(newer["dividend_value"]), float(older["dividend_value"])
         jump = max(a / b, b / a)
-        if jump >= threshold:
-            # Same-day pairs are usually special vs regular, not splits
-            d1 = work.loc[i, "closing_date"]
-            d2 = work.loc[i + 1, "closing_date"]
-            if pd.notna(d1) and pd.notna(d2) and d1 == d2:
-                continue
-            anomalies.append({
-                "ticker": ticker,
-                "newer_date": str(work.loc[i, "closing_date"].date())
-                if pd.notna(work.loc[i, "closing_date"]) else None,
-                "newer_value": a,
-                "older_date": str(work.loc[i + 1, "closing_date"].date())
-                if pd.notna(work.loc[i + 1, "closing_date"]) else None,
-                "older_value": b,
-                "jump_ratio": round(jump, 2),
-            })
+        d1, d2 = newer["closing_date"], older["closing_date"]
+        if jump < threshold or d1 is not None and d1 == d2:
+            continue
+        anomalies.append(dict(ticker=ticker, newer_date=str(d1) if d1 else None,
+            newer_value=a, older_date=str(d2) if d2 else None, older_value=b, jump_ratio=round(jump, 2)))
     return anomalies
 
 
@@ -114,16 +99,18 @@ def process_file(
     raw_path: str,
     out_path: str,
     splits_map: Dict[str, List[dict]],
+    supplements_path=SUPPLEMENTS_PATH,
 ) -> Tuple[bool, List[dict], List[dict]]:
-    df_raw = pd.read_csv(raw_path)
+    df_raw = pl.read_csv(raw_path, schema_overrides={"closing_date": pl.String, "year": pl.Int64, "dividend_value": pl.Float64})
     df_raw = normalize_value_column(df_raw)
+    df_raw = merge_official(df_raw, ticker, supplements_path)
 
     raw_anomalies = detect_jumps(df_raw, ticker)
     splits = splits_map.get(ticker, [])
     df_adj = adjust_dataframe(df_raw, splits)
 
     os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
-    df_adj.to_csv(out_path, index=False)
+    df_adj.write_csv(out_path)
 
     adj_anomalies = detect_jumps(df_adj, ticker)
     return bool(splits), raw_anomalies, adj_anomalies

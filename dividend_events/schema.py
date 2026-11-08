@@ -3,7 +3,7 @@
 import polars as pl
 
 SCHEMA_VERSION = "1.0.0"
-PARSER_VERSION = "dividend-events/1.2.0"
+PARSER_VERSION = "dividend-events/1.2.1"
 
 
 def strings(names):

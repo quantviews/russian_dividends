@@ -13,6 +13,7 @@ MONTHS = {name: i for i, name in enumerate("января февраля март
 
 def russian_date(text):
     text = " ".join(text.split())
+    text = re.sub(r"(\d{4})(?=г(?:ода)?(?:\.|\b))", r"\1 ", text, flags=re.I)
     match = re.search(r"\b(\d{1,2})\.(\d{2})\.(\d{4})\b", text)
     if match:
         return datetime.strptime(match.group(), "%d.%m.%Y").date().isoformat()
