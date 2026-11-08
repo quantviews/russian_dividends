@@ -193,11 +193,13 @@
   "split_adjust": {
     "adjusted_tickers": [
       "GMKN",
+      "IRAO",
       "PLZL",
       "TRNFP",
-      "TRNFPP"
+      "TRNFPP",
+      "VTBR"
     ],
-    "raw_anomalies": 53,
-    "remaining_anomalies": 51
+    "raw_anomalies": 22,
+    "remaining_anomalies": 17
   }
 }

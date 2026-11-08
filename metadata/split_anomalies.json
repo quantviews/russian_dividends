@@ -287,6 +287,14 @@
       "jump_ratio": 246.43
     },
     {
+      "ticker": "GMKN",
+      "newer_date": "2026-10-12",
+      "newer_value": 1.85,
+      "older_date": "2023-12-26",
+      "older_value": 915.33,
+      "jump_ratio": 494.77
+    },
+    {
       "ticker": "IRAO",
       "newer_date": "2015-06-09",
       "newer_value": 0.001039679119,
